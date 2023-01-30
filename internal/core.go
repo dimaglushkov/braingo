@@ -22,7 +22,6 @@ var (
 
 func init() {
 	ResetMem(DefaultMemSize)
-
 }
 
 func ResetMem(memSize int) int {
@@ -84,7 +83,7 @@ func Execute(cmd string) error {
 				}
 			}
 		default:
-			return NewUnknownInstructionErr(cmd[i])
+			return NewUnknownInstructionErr(cmd[i], false)
 		}
 
 		i++
