@@ -1,2 +1,3 @@
 # bfgo
-brainf golang implementation
+Brainf*ck Golang interpretator
+
