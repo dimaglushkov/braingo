@@ -2,52 +2,41 @@ package internal
 
 import (
 	"fmt"
-	"strings"
+	"os"
 )
 
-const (
-	DefaultMemSize = 30_000
-)
+const DefaultMemSize = 30_000
 
 var (
-	mem          []byte
-	ioMode       IOMode = IOModeDigit
-	ptr                 = 0
-	spacingChars        = [...]string{
-		" ",
-		"\n",
-		"\t",
-	}
+	mem           = make([]byte, DefaultMemSize)
+	ioMode IOMode = IOModeDigit
+	ptr           = 0
 )
 
-func init() {
-	ResetMem(DefaultMemSize)
-}
-
-func ResetMem(memSize int) int {
-	if memSize <= 0 {
-		memSize = DefaultMemSize
+func ExecuteFile(filePath string) error {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
 	}
-	mem = make([]byte, memSize)
-	return len(mem)
-}
-
-func SetIOMode(iom IOMode) {
-	ioMode = iom
+	return Execute(string(content))
 }
 
 func Execute(cmd string) error {
-	for _, sch := range spacingChars {
-		cmd = strings.ReplaceAll(cmd, sch, "")
-	}
+	cmd = stripSpaces(cmd)
 
 	i := 0
 	for i < len(cmd) {
 		switch cmd[i] {
 		case '>':
 			ptr++
+			if ptr >= len(mem) {
+				ptr = 0
+			}
 		case '<':
 			ptr--
+			if ptr < 0 {
+				ptr = len(mem) - 1
+			}
 		case '+':
 			mem[ptr]++
 		case '-':
@@ -83,7 +72,7 @@ func Execute(cmd string) error {
 				}
 			}
 		default:
-			return NewUnknownInstructionErr(cmd[i], false)
+			return NewUnknownInstructionError(cmd[i])
 		}
 
 		i++

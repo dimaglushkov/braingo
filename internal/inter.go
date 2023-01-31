@@ -1,47 +1,108 @@
 package internal
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
+	"io"
+	"os"
 	"strings"
 )
 
-var commands = map[byte]func(string) error{
-	'r': InterResetMem,
-	'm': InterSetIOMode,
-	'd': InterDumpMem,
-}
+const helpMessage = `-----
+Braingo - brainfuck interpreter written in go
+Available interactive commands:
+\f <file>  - run code from <file>;
+\r <size>  - reset pointer & memory and set its size to <size>;
+\m <d/c>   - change current IO format: d - print values as digits, c - try to print values ascii symbols;
+\d <f> <t> - print memory values at cells with indices from <f> to <t>;
+\h         - print this message;
+-----`
 
-func ExecInteractive(cmd string) error {
-	call := cmd[1]
-	if _, ok := commands[call]; !ok {
-		return NewUnknownInstructionErr(call, true)
+func ExecuteInteractive() error {
+	fmt.Println(helpMessage)
+	in := bufio.NewReader(os.Stdin)
+	for {
+		x, err := in.ReadString('\n')
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+		}
+		if x[0] == '\\' {
+			if err = execInterCommand(x); err != nil {
+				fmt.Println(err)
+			}
+		} else {
+			if err = Execute(x); err != nil {
+				fmt.Println(err)
+			}
+		}
 	}
-
-	return commands[call](cmd)
 }
 
-func InterResetMem(cmd string) error {
+func execInterCommand(cmd string) error {
 	args := strings.Fields(cmd)
+	instr := args[0]
+
+	switch instr {
+	case "\\f":
+		if len(args) != 2 {
+			return errWrongNumberOfArguments
+		}
+		return ExecuteFile(args[1])
+	case "\\r":
+		return resetMem(args...)
+	case "\\m":
+		return setIOMode(args...)
+	case "\\d":
+		return dumpMem(args...)
+	case "\\h":
+		fmt.Println(helpMessage)
+		return nil
+	default:
+		return errUnknownInteractiveCommand
+	}
+}
+
+func resetMem(args ...string) error {
+	ptr = 0
 	if len(args) == 1 {
-		ResetMem(len(mem))
+		for i := range mem {
+			mem[i] = 0
+		}
 		return nil
 	}
 	memSize, err := atoi(args[1])
 	if err != nil {
 		return err
 	}
-	ResetMem(memSize)
+	if memSize <= 0 {
+		return errInvalidMemorySize
+	}
+	mem = make([]byte, memSize)
 	return nil
 }
 
-func InterSetIOMode(cmd string) error {
+func setIOMode(args ...string) error {
+	if len(args) != 2 {
+		return errWrongNumberOfArguments
+	}
+	switch m := args[1]; m {
+	case "d":
+		ioMode = IOModeDigit
+	case "c":
+		ioMode = IOModeChar
+	default:
+		return errUnknownIOMode
+	}
+
 	return nil
 }
 
-func InterDumpMem(cmd string) error {
-	args := strings.Fields(cmd)
+func dumpMem(args ...string) error {
 	if len(args) != 3 {
-		return new(WrongNumberOfArgsErr)
+		return errWrongNumberOfArguments
 	}
 	si, err := atoi(args[1])
 	if err != nil {
@@ -52,14 +113,13 @@ func InterDumpMem(cmd string) error {
 		return err
 	}
 
-	if si > ei {
-		return nil
+	if si > ei || si > len(mem) || ei > len(mem) || si < 0 || ei <= 0 {
+		return errMemorySizeExceeded
 	}
 
 	for i := si; i < ei; i++ {
-		fmt.Printf("%v.", mem[i])
+		fmt.Printf("%v ", mem[i])
 	}
 	fmt.Println()
-
 	return nil
 }

@@ -1,3 +1,3 @@
 # bfgo
-Brainf*ck Golang interpretator
+Brainfuck Golang interpreter
 
