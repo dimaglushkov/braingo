@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 const DefaultMemSize = 30_000
@@ -23,6 +24,9 @@ func ExecuteFile(filePath string) error {
 
 func Execute(cmd string) error {
 	cmd = stripSpaces(cmd)
+	if strings.Count(cmd, "[") != strings.Count(cmd, "]") {
+		return errUnevenNumberOfParentheses
+	}
 
 	i := 0
 	for i < len(cmd) {
@@ -76,6 +80,9 @@ func Execute(cmd string) error {
 		}
 
 		i++
+	}
+	if strings.Contains(cmd, ".") {
+		fmt.Println()
 	}
 	return nil
 }

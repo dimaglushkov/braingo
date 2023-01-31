@@ -11,6 +11,7 @@ var (
 	errInvalidMemorySize         = errors.New("invalid memory size value")
 	errUnknownInteractiveCommand = errors.New("unknown interactive command")
 	errUnknownIOMode             = errors.New("unknown IO format")
+	errUnevenNumberOfParentheses = errors.New("uneven number of parentheses")
 )
 
 type UnknownInstructionError error

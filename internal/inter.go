@@ -14,7 +14,9 @@ Braingo - brainfuck interpreter written in go
 Available interactive commands:
 \f <file>  - run code from <file>;
 \r <size>  - reset pointer & memory and set its size to <size>;
-\m <d/c>   - change current IO format: d - print values as digits, c - try to print values ascii symbols;
+\m <d/c>   - change current IO format: 
+				d - print values as digits, 
+				c - print ascii symbol represented by value;
 \d <f> <t> - print memory values at cells with indices from <f> to <t>;
 \h         - print this message;
 -----`
@@ -23,6 +25,8 @@ func ExecuteInteractive() error {
 	fmt.Println(helpMessage)
 	in := bufio.NewReader(os.Stdin)
 	for {
+		fmt.Print("> ")
+
 		x, err := in.ReadString('\n')
 		if err != nil {
 			if errors.Is(err, io.EOF) {
